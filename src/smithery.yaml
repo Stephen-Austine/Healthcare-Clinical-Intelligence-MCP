@@ -1,0 +1,77 @@
+# Smithery configuration for Prompt Opinion Marketplace
+# Enables discovery, invocation and SHARP context propagation of this MCP server
+
+name: healthcare-clinical-intelligence
+version: 1.0.0
+description: >
+  Clinical Decision Support Superpower with FHIR R5 integration.
+  Provides AI-powered triage, polypharmacy safety analysis, and evidence-based
+  guideline recommendations with automatic SHARP context propagation.
+
+author: Healthcare AI Hackathon Team
+license: MIT
+
+# MCP server execution
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      fhir_server_url:
+        type: string
+        description: "FHIR R5 base URL (e.g. https://hapi.fhir.org/baseR5)"
+        default: "https://hapi.fhir.org/baseR5"
+    required: []
+  commandFunction: |
+    (config) => ({
+      command: "python",
+      args: ["server.py"],
+      env: {
+        PYTHONPATH: ".",
+        FHIR_SERVER_URL: config.fhir_server_url || "https://hapi.fhir.org/baseR5"
+      }
+    })
+
+# SHARP Extension: Healthcare context requirements
+sharp:
+  required_context:
+    - patient_id
+    - fhir_server_url
+  optional_context:
+    - access_token
+    - encounter_id
+  fhir_version: "R5"
+
+tools:
+  - name: clinical_triage_tool
+    category: clinical_decision_support
+    description: >
+      AI-powered triage assigning ESI-aligned priority with FHIR Observation write.
+    inputs: [symptoms_json, patient_id, chief_complaint, vital_signs_json]
+    outputs: [triage_priority, risk_score, fhir_observation_reference]
+
+  - name: analyze_polypharmacy_tool
+    category: medication_safety
+    description: >
+      Drug interaction analysis with organ-adjusted dosing and FHIR MedicationRequest.
+    inputs: [medications_json, patient_id, allergies_json, renal_function, hepatic_function]
+    outputs: [overall_risk_score, interactions, fhir_medication_request_reference]
+
+  - name: get_clinical_guideline_tool
+    category: evidence_based_medicine
+    description: >
+      Society guideline recommendations with FHIR CarePlan generation.
+    inputs: [condition_code, condition_display, patient_id, current_medications_json]
+    outputs: [recommendation, strength, evidence_grade, fhir_careplan_reference]
+
+tags:
+  - healthcare
+  - fhir
+  - fhir-r5
+  - clinical_decision_support
+  - medication_safety
+  - triage
+  - mcp
+  - sharp
+  - polypharmacy
+  - evidence-based-medicine
