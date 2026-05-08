@@ -53,20 +53,44 @@ def main():
          "--port", str(API_PORT), "--host", "0.0.0.0"],
         cwd=SRC_DIR,
         env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
     print(BANNER)
 
-    # Wait for API to be ready
+    # Wait for API to be ready with timeout
     import urllib.request
-    for _ in range(20):
+    import json
+    max_attempts = 30
+    attempt = 0
+    api_ready = False
+    
+    while attempt < max_attempts:
         try:
-            urllib.request.urlopen(f"http://localhost:{API_PORT}/health", timeout=1)
-            break
-        except Exception:
+            response = urllib.request.urlopen(f"http://localhost:{API_PORT}/health", timeout=1)
+            data = json.loads(response.read().decode())
+            if data.get("status") == "healthy":
+                api_ready = True
+                print("✅ API is healthy and ready!\n")
+                break
+        except Exception as e:
+            attempt += 1
+            if attempt % 5 == 0:
+                print(f"  ⏳ Waiting for API... ({attempt}/{max_attempts})")
             time.sleep(0.5)
+    
+    if not api_ready:
+        print("❌ API failed to start within timeout")
+        # Try to read stderr to understand why
+        stderr_output = api_proc.stderr.read() if api_proc.stderr else "No error output"
+        print(f"\nServer output:\n{stderr_output}")
+        api_proc.terminate()
+        sys.exit(1)
 
     # Open frontend
+    print(f"🌐 Opening browser → http://localhost:{API_PORT}\n")
     webbrowser.open(f"http://localhost:{API_PORT}")
 
     # Keep running until Ctrl+C
@@ -75,7 +99,10 @@ def main():
     except KeyboardInterrupt:
         print("\n\nShutting down...")
         api_proc.send_signal(signal.SIGTERM)
-        api_proc.wait()
+        try:
+            api_proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            api_proc.kill()
         print("Stopped. Goodbye.")
 
 if __name__ == "__main__":

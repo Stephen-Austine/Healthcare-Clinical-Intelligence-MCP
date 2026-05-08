@@ -1,1202 +1,565 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Healthcare Clinical Intelligence</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg:        #0a0e14;
-  --bg2:       #0f1520;
-  --bg3:       #141c2b;
-  --border:    #1e2d45;
-  --border2:   #243450;
-  --text:      #c8d8f0;
-  --text2:     #7a94b8;
-  --text3:     #4a6080;
-  --accent:    #00d4ff;
-  --accent2:   #0099cc;
-  --green:     #00e676;
-  --yellow:    #ffd740;
-  --orange:    #ff9100;
-  --red:       #ff3d71;
-  --stat:      #ff3d71;
-  --asap:      #ff9100;
-  --urgent:    #ffd740;
-  --routine:   #00e676;
-  --critical-bg: rgba(255,61,113,0.08);
-  --major-bg:    rgba(255,145,0,0.08);
-  --moderate-bg: rgba(255,215,64,0.06);
-  --glow:      0 0 30px rgba(0,212,255,0.08);
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClinicalAI Healthcare Decision Support</title>
+  <style>
+    :root {
+      --primary: #0A3D62;
+      --primary-hover: #1E6091;
+      --accent: #0077B6;
+      --alert-red: #C62828;
+      --alert-red-hover: #A31F1F;
+      --bg: #F5F7FA;
+      --surface: #FFFFFF;
+      --text-main: #2C3E50;
+      --text-muted: #5D6D7E;
+      --border: #D1D9E0;
+      --focus-ring: rgba(0, 119, 182, 0.25);
+      --success: #2E7D32;
+      --warning: #F57C00;
+      --error: #C62828;
+      --radius: 6px;
+      --shadow: 0 2px 10px rgba(0,0,0,0.05);
+      --input-height: 48px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
 
-* { margin:0; padding:0; box-sizing:border-box; }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .logo { font-size: 1.35rem; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
+    .logo span { color: var(--accent); }
+    nav { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    nav ul { display: flex; list-style: none; gap: 1.5rem; }
+    nav a { text-decoration: none; color: var(--text-muted); font-weight: 500; padding: 0.5rem 0; border-bottom: 2px solid transparent; transition: all 0.2s; font-size: 0.95rem; cursor: pointer; }
+    nav a:hover, nav a.active { color: var(--primary); border-bottom-color: var(--accent); }
+    .demo-badge { 
+      background: var(--success); color: white; padding: 0.25rem 0.6rem; 
+      border-radius: 12px; font-size: 0.75rem; font-weight: 600; 
+      cursor: pointer; transition: opacity 0.2s; margin-left: auto;
+    }
+    .demo-badge:hover { opacity: 0.9; }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
-  min-height: 100vh;
-}
+    main { 
+      width: 98vw; 
+      max-width: 1600px; 
+      margin: 1.5rem auto; 
+      padding: 0 1rem; 
+    }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+      width: 100%;
+      display: none;
+    }
+    .card.active { display: block; }
+    h2 { font-size: 1.25rem; color: var(--primary); margin-bottom: 1.25rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.6rem; }
+    h3 { font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.8rem; }
+    .tag { display: inline-block; padding: 0.25rem 0.6rem; background: #E8F4FD; color: var(--primary-hover); border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+    .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
 
-/* ── Grid layout ───────────────────────────────────── */
-.layout {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  grid-template-rows: 56px 1fr;
-  min-height: 100vh;
-}
+    .form-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+      gap: 1rem 1.25rem; 
+    }
+    .full-span { grid-column: 1 / -1; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    label { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
+    input, select, textarea {
+      height: var(--input-height);
+      padding: 0 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.92rem;
+      transition: border 0.2s, box-shadow 0.2s;
+      background: #FAFBFC;
+      width: 100%;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-ring); background: #fff;
+    }
+    textarea.large-input {
+      height: auto;
+      min-height: 90px;
+      resize: vertical;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
 
-/* ── Topbar ────────────────────────────────────────── */
-.topbar {
-  grid-column: 1 / -1;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  gap: 12px;
-}
-.topbar-logo {
-  font-family: 'Instrument Serif', serif;
-  font-size: 18px;
-  color: var(--accent);
-  letter-spacing: -0.02em;
-}
-.topbar-sub {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-top: 1px;
-}
-.topbar-sep { flex: 1; }
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity:1; }
-  50% { opacity:0.4; }
-}
-.status-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--text3);
-}
+    .btn {
+      padding: 0 1.2rem; height: var(--input-height); background: var(--primary); color: white; border: none; border-radius: var(--radius); font-weight: 500; cursor: pointer; transition: background 0.2s, opacity 0.2s; font-size: 0.92rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary { background: var(--bg); color: var(--text-main); border: 1px solid var(--border); height: var(--input-height); }
+    .btn-secondary:hover:not(:disabled) { background: #E9ECEF; }
+    .btn-alert { background: var(--alert-red); color: #fff; border: none; }
+    .btn-alert:hover:not(:disabled) { background: var(--alert-red-hover); }
+    
+    .actions { margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; justify-content: flex-start; }
 
-/* ── Sidebar ───────────────────────────────────────── */
-.sidebar {
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
-  padding: 16px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.nav-section {
-  padding: 16px 16px 6px;
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  color: var(--text3);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 16px;
-  cursor: pointer;
-  border-radius: 0;
-  border-left: 2px solid transparent;
-  transition: all 0.15s;
-  color: var(--text2);
-  font-size: 13px;
-}
-.nav-item:hover {
-  background: var(--bg3);
-  color: var(--text);
-  border-left-color: var(--border2);
-}
-.nav-item.active {
-  background: rgba(0,212,255,0.06);
-  color: var(--accent);
-  border-left-color: var(--accent);
-}
-.nav-icon { font-size: 15px; width: 20px; text-align:center; }
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Main ──────────────────────────────────────────── */
-.main {
-  overflow-y: auto;
-  padding: 28px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+    .result-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      border-radius: var(--radius);
+      border-left: 4px solid var(--border);
+      background: #F9FAFB;
+      display: none;
+    }
+    .result-section.show { display: block; }
+    .result-section.success { border-left-color: var(--success); background: #E8F5E9; }
+    .result-section.error { border-left-color: var(--error); background: #FFEBEE; }
+    
+    .result-title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .result-content {
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .result-detail {
+      margin: 0.75rem 0;
+      padding: 0.5rem 0;
+    }
+    .result-detail strong {
+      color: var(--primary);
+      min-width: 120px;
+      display: inline-block;
+    }
+    .json-output {
+      background: #2C3E50;
+      color: #A8E6CF;
+      padding: 1rem;
+      border-radius: var(--radius);
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
 
-/* ── Panels ────────────────────────────────────────── */
-.panel {
-  display: none;
-  flex-direction: column;
-  gap: 20px;
-  animation: fadeIn 0.2s ease;
-}
-.panel.active { display: flex; }
-@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+    .alert {
+      padding: 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .alert.error {
+      background: #FFEBEE;
+      border: 1px solid #EF5350;
+      color: #C62828;
+    }
+    .alert.success {
+      background: #E8F5E9;
+      border: 1px solid #66BB6A;
+      color: #2E7D32;
+    }
+    .alert-icon { font-size: 1.2rem; flex-shrink: 0; }
 
-.panel-header { display:flex; align-items:flex-end; gap:12px; }
-.panel-title {
-  font-family: 'Instrument Serif', serif;
-  font-size: 26px;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-.panel-badge {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 3px;
-  background: rgba(0,212,255,0.1);
-  color: var(--accent);
-  border: 1px solid rgba(0,212,255,0.2);
-  letter-spacing: 0.06em;
-  margin-bottom: 2px;
-}
+    footer { text-align: center; padding: 2rem 1.5rem; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; background: var(--surface); }
+    .standards { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; }
+    .std-tag { background: var(--bg); padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.75rem; color: var(--text-muted); border: 1px solid var(--border); }
 
-/* ── Cards ─────────────────────────────────────────── */
-.card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.card-header {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.card-body { padding: 18px; }
-
-/* ── Form elements ─────────────────────────────────── */
-.form-grid { display: grid; gap: 14px; }
-.form-grid-2 { grid-template-columns: 1fr 1fr; }
-.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-
-.field { display:flex; flex-direction:column; gap:5px; }
-.field label {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.field input, .field select, .field textarea {
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  border-radius: 5px;
-  padding: 8px 12px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.field input:focus, .field select:focus, .field textarea:focus {
-  border-color: var(--accent2);
-}
-.field select option { background: var(--bg3); }
-.field textarea { resize: vertical; min-height: 60px; }
-
-/* ── Symptom builder ───────────────────────────────── */
-.symptom-list { display:flex; flex-direction:column; gap:8px; }
-.symptom-row {
-  display: grid;
-  grid-template-columns: 80px 1fr 120px 36px;
-  gap: 8px;
-  align-items: end;
-}
-.severity-display {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--accent);
-  text-align: center;
-  margin-top: 4px;
-}
-.btn-icon {
-  background: rgba(255,61,113,0.1);
-  border: 1px solid rgba(255,61,113,0.2);
-  color: var(--red);
-  border-radius: 5px;
-  width: 36px; height: 36px;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex; align-items:center; justify-content:center;
-  transition: all 0.15s;
-}
-.btn-icon:hover { background: rgba(255,61,113,0.2); }
-.btn-add {
-  background: rgba(0,212,255,0.06);
-  border: 1px dashed rgba(0,212,255,0.25);
-  color: var(--accent);
-  border-radius: 5px;
-  padding: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  letter-spacing: 0.05em;
-  transition: all 0.15s;
-  width: 100%;
-  text-align: center;
-}
-.btn-add:hover { background: rgba(0,212,255,0.12); }
-
-/* ── Med builder ───────────────────────────────────── */
-.med-row {
-  display: grid;
-  grid-template-columns: 80px 1fr 1fr 36px;
-  gap: 8px;
-  align-items: end;
-}
-
-/* ── Run button ────────────────────────────────────── */
-.btn-run {
-  background: linear-gradient(135deg, var(--accent2), var(--accent));
-  border: none;
-  border-radius: 6px;
-  padding: 12px 28px;
-  color: #000;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  letter-spacing: 0.03em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-}
-.btn-run:hover { opacity: 0.9; transform: translateY(-1px); }
-.btn-run:active { transform: translateY(0); }
-.btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.spinner {
-  width: 14px; height: 14px;
-  border: 2px solid rgba(0,0,0,0.3);
-  border-top-color: #000;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: none;
-}
-.btn-run.loading .spinner { display: block; }
-.btn-run.loading .btn-label { display: none; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Results ───────────────────────────────────────── */
-.result-area { display:none; flex-direction:column; gap:16px; }
-.result-area.visible { display:flex; }
-
-/* Triage priority card */
-.priority-banner {
-  border-radius: 8px;
-  padding: 20px 24px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  border: 1px solid;
-}
-.priority-banner.stat    { background:rgba(255,61,113,0.1); border-color:rgba(255,61,113,0.3); }
-.priority-banner.asap    { background:rgba(255,145,0,0.1);  border-color:rgba(255,145,0,0.3); }
-.priority-banner.urgent  { background:rgba(255,215,64,0.1); border-color:rgba(255,215,64,0.3); }
-.priority-banner.routine { background:rgba(0,230,118,0.08); border-color:rgba(0,230,118,0.3); }
-
-.priority-level {
-  font-family: 'DM Mono', monospace;
-  font-size: 32px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-}
-.priority-banner.stat    .priority-level { color: var(--stat); }
-.priority-banner.asap    .priority-level { color: var(--orange); }
-.priority-banner.urgent  .priority-level { color: var(--yellow); }
-.priority-banner.routine .priority-level { color: var(--green); }
-
-.priority-meta { flex:1; }
-.priority-esi { font-size:13px; color: var(--text2); margin-bottom:2px; }
-.priority-wait { font-family:'DM Mono',monospace; font-size:11px; color:var(--text3); }
-
-.score-ring {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.score-val { font-family:'DM Mono',monospace; font-size:22px; color:var(--text); }
-.score-lbl { font-family:'DM Mono',monospace; font-size:9px; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; }
-
-.news2-val { font-family:'DM Mono',monospace; font-size:22px; color:var(--accent); }
-
-/* Tags */
-.tag-list { display:flex; flex-wrap:wrap; gap:6px; }
-.tag {
-  font-family:'DM Mono',monospace;
-  font-size:10px;
-  padding: 3px 10px;
-  border-radius: 3px;
-  letter-spacing: 0.04em;
-}
-.tag.red    { background:rgba(255,61,113,0.12); color:var(--red); border:1px solid rgba(255,61,113,0.2); }
-.tag.orange { background:rgba(255,145,0,0.12); color:var(--orange); border:1px solid rgba(255,145,0,0.2); }
-.tag.green  { background:rgba(0,230,118,0.1); color:var(--green); border:1px solid rgba(0,230,118,0.2); }
-.tag.blue   { background:rgba(0,212,255,0.08); color:var(--accent); border:1px solid rgba(0,212,255,0.2); }
-.tag.grey   { background:rgba(122,148,184,0.08); color:var(--text2); border:1px solid var(--border2); }
-
-/* Action list */
-.action-list { display:flex; flex-direction:column; gap:6px; }
-.action-item {
-  display:flex; align-items:flex-start; gap:10px;
-  padding: 8px 12px;
-  background: var(--bg3);
-  border-radius: 5px;
-  font-size: 13px;
-}
-.action-item::before { content:'→'; color:var(--accent); font-family:'DM Mono',monospace; flex-shrink:0; }
-
-/* Risk score bar */
-.risk-bar-wrap { display:flex; flex-direction:column; gap:6px; }
-.risk-bar-label { display:flex; justify-content:space-between; }
-.risk-bar-label span { font-family:'DM Mono',monospace; font-size:11px; color:var(--text2); }
-.risk-bar-outer { background:var(--bg3); border-radius:3px; height:6px; overflow:hidden; }
-.risk-bar-inner { height:100%; border-radius:3px; transition: width 0.6s ease; }
-
-/* Interaction cards */
-.interaction-card {
-  border-radius: 6px;
-  padding: 14px;
-  border: 1px solid;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.interaction-card.critical { background:var(--critical-bg); border-color:rgba(255,61,113,0.25); }
-.interaction-card.major    { background:var(--major-bg);    border-color:rgba(255,145,0,0.2); }
-.interaction-card.moderate { background:var(--moderate-bg); border-color:rgba(255,215,64,0.15); }
-
-.ix-header { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.ix-drugs { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); }
-.ix-severity {
-  font-family:'DM Mono',monospace; font-size:10px;
-  padding:2px 8px; border-radius:3px; text-transform:uppercase; letter-spacing:0.06em;
-}
-.ix-severity.critical { background:rgba(255,61,113,0.2); color:var(--red); }
-.ix-severity.major    { background:rgba(255,145,0,0.2);  color:var(--orange); }
-.ix-severity.moderate { background:rgba(255,215,64,0.15);color:var(--yellow); }
-.ix-desc { font-size:12px; color:var(--text2); }
-.ix-mgmt { font-size:12px; color:var(--text); background:var(--bg3); padding:8px 10px; border-radius:4px; }
-.ix-mgmt::before { content:"Rx  "; font-family:'DM Mono',monospace; color:var(--accent); font-size:10px; }
-
-/* Guideline card */
-.guideline-card { display:flex; flex-direction:column; gap:14px; }
-.guideline-source {
-  font-family:'DM Mono',monospace; font-size:10px; color:var(--accent);
-  letter-spacing:0.08em; text-transform:uppercase;
-}
-.guideline-text { font-size:14px; color:var(--text); line-height:1.7; }
-.strength-badge {
-  display:inline-flex; align-items:center; gap:6px;
-  background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.2);
-  padding:3px 10px; border-radius:3px;
-  font-family:'DM Mono',monospace; font-size:10px; color:var(--green);
-  letter-spacing:0.06em;
-}
-.section-label {
-  font-family:'DM Mono',monospace; font-size:10px;
-  color:var(--text3); letter-spacing:0.1em; text-transform:uppercase;
-  margin-bottom:6px;
-}
-.pill-list { display:flex; flex-wrap:wrap; gap:6px; }
-.pill {
-  background:var(--bg3); border:1px solid var(--border2);
-  border-radius:20px; padding:4px 12px;
-  font-size:12px; color:var(--text2);
-}
-
-/* Error */
-.error-box {
-  background:rgba(255,61,113,0.08);
-  border:1px solid rgba(255,61,113,0.25);
-  border-radius:6px; padding:14px 16px;
-  color:var(--red); font-family:'DM Mono',monospace; font-size:12px;
-}
-
-/* JSON viewer */
-.json-toggle {
-  font-family:'DM Mono',monospace; font-size:10px;
-  color:var(--text3); cursor:pointer; letter-spacing:0.05em;
-  text-decoration:underline;
-}
-.json-toggle:hover { color:var(--text2); }
-pre.json-raw {
-  background:var(--bg3); border:1px solid var(--border);
-  border-radius:5px; padding:14px; overflow-x:auto;
-  font-family:'DM Mono',monospace; font-size:11px;
-  color:var(--text2); line-height:1.5; display:none;
-}
-pre.json-raw.visible { display:block; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width:5px; height:5px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
-
-/* Responsive */
-@media (max-width:768px) {
-  .layout { grid-template-columns:1fr; }
-  .sidebar { display:none; }
-  .form-grid-2, .form-grid-3 { grid-template-columns:1fr; }
-  .symptom-row { grid-template-columns:1fr 1fr; }
-  .med-row { grid-template-columns:1fr 1fr; }
-}
-</style>
+    @media (max-width: 768px) {
+      header { flex-direction: column; gap: 1rem; align-items: flex-start; }
+      nav ul { flex-wrap: wrap; gap: 1rem; }
+      .form-grid { grid-template-columns: 1fr; }
+      .actions { flex-direction: column; align-items: stretch; }
+      .btn { width: 100%; }
+      .demo-badge { margin-left: 0; margin-top: 0.5rem; }
+    }
+  </style>
 </head>
 <body>
-
-<div class="layout">
-
-  <!-- Topbar -->
-  <header class="topbar">
-    <div>
-      <div class="topbar-logo">⚕ ClinicalAI</div>
-      <div class="topbar-sub">Healthcare Decision Support</div>
-    </div>
-    <div class="topbar-sep"></div>
-    <div class="status-dot" id="statusDot"></div>
-    <div class="status-label" id="statusLabel">connecting...</div>
+  <header>
+    <div class="logo">Clinical<span>AI</span> Decision Support</div>
+    <nav>
+      <ul>
+        <li><a class="tab-link active" data-tab="triage">Triage</a></li>
+        <li><a class="tab-link" data-tab="polypharmacy">Polypharmacy</a></li>
+        <li><a class="tab-link" data-tab="guidelines">Guidelines</a></li>
+        <li><a class="tab-link" data-tab="about">About</a></li>
+      </ul>
+    </nav>
+    <div class="demo-badge" id="demoButton">📋 Load Demo</div>
   </header>
 
-  <!-- Sidebar -->
-  <nav class="sidebar">
-    <div class="nav-section">Clinical Tools</div>
-    <div class="nav-item active" onclick="showPanel('triage',this)">
-      <span class="nav-icon">🚨</span> Triage
-    </div>
-    <div class="nav-item" onclick="showPanel('pharmacy',this)">
-      <span class="nav-icon">💊</span> Polypharmacy
-    </div>
-    <div class="nav-item" onclick="showPanel('guideline',this)">
-      <span class="nav-icon">📋</span> Guidelines
-    </div>
-    <div class="nav-section" style="margin-top:12px">Reference</div>
-    <div class="nav-item" onclick="showPanel('about',this)">
-      <span class="nav-icon">ℹ️</span> About
-    </div>
-  </nav>
-
-  <!-- Main content -->
-  <main class="main">
-
-    <!-- ════ TRIAGE PANEL ════ -->
-    <div class="panel active" id="panel-triage">
-      <div class="panel-header">
-        <div class="panel-title">Clinical Triage</div>
-        <div class="panel-badge">NEWS2 + ESI-5</div>
+  <main>
+    <section id="triage" class="card active">
+      <h2>Clinical Triage <span class="tag">NEWS2 + ESI-5</span></h2>
+      <div id="triageAlert"></div>
+      
+      <h3>Patient Information</h3>
+      <div class="form-grid">
+        <div class="form-group full-span"><label>Patient Full Name</label><input type="text" id="triagePatientName" placeholder="Enter patient's full name"></div>
+        <div class="form-group full-span"><label>Chief Complaint</label><textarea class="large-input" id="triageChiefComplaint" placeholder="Describe chief complaint..."></textarea></div>
+        <div class="form-group"><label>Age (years)</label><input type="number" id="triageAge" placeholder="e.g., 65" min="0"></div>
+        <div class="form-group"><label>Sex</label><select id="triageSex"><option value="unknown">Unknown</option><option value="male">Male</option><option value="female">Female</option></select></div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;"><input type="checkbox" id="triagePregnant" style="width: 24px; height: 24px; cursor: pointer; accent-color: var(--accent);"><label for="triagePregnant" style="font-size: 0.95rem; font-weight: 500; margin: 0; cursor: pointer;">Pregnant (if applicable)</label></div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;"><input type="checkbox" id="triageCOPD" style="width: 24px; height: 24px; cursor: pointer; accent-color: var(--accent);"><label for="triageCOPD" style="font-size: 0.95rem; font-weight: 500; margin: 0; cursor: pointer;">Known COPD</label></div>
       </div>
+      
+      <div class="divider"></div>
+      <h3>Vital Signs <span class="tag">Optional</span></h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Systolic BP (mmHg)</label><input type="number" id="vitals_systolic_bp"></div>
+        <div class="form-group"><label>Diastolic BP (mmHg)</label><input type="number" id="vitals_diastolic_bp"></div>
+        <div class="form-group"><label>Heart Rate (bpm)</label><input type="number" id="vitals_heart_rate"></div>
+        <div class="form-group"><label>Respiratory Rate</label><input type="number" id="vitals_respiratory_rate"></div>
+        <div class="form-group"><label>SpO2 (%)</label><input type="number" id="vitals_oxygen_saturation" min="0" max="100"></div>
+        <div class="form-group"><label>Temperature (°C)</label><input type="number" id="vitals_temperature" step="0.1"></div>
+        <div class="form-group"><label>GCS (3–15)</label><input type="number" id="vitals_gcs" min="3" max="15"></div>
+        <div class="form-group"><label>Pain Score (0–10)</label><input type="number" id="vitals_pain_score" min="0" max="10"></div>
+      </div>
+      
+      <div class="divider"></div>
+      <h3>Symptoms</h3>
+      <div id="triageSymptomsContainer" class="form-grid">
+        <div class="form-group full-span" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: flex-end;"><div style="display: flex; flex-direction: column; gap: 0.35rem;"><label>Symptom 1</label><input type="text" class="triage-symptom" placeholder="e.g., Chest pain"></div><button class="btn btn-alert" style="height: var(--input-height);" onclick="this.closest('.form-group').remove()">✕</button></div>
+      </div>
+      <div class="actions" style="margin-bottom: 1rem;">
+        <button class="btn btn-alert" id="addTriageSymptom">+ Add Symptom</button>
+      </div>
+      <div class="actions">
+        <button class="btn" id="runTriageButton">▶ Run Triage Assessment</button>
+      </div>
+      <div id="triageResult" class="result-section">
+        <div class="result-title">✓ Triage Assessment Complete</div>
+        <div id="triageResultContent"></div>
+      </div>
+    </section>
 
-      <div class="card">
-        <div class="card-header">🧑‍⚕️ Patient Information</div>
-        <div class="card-body">
-          <div class="form-grid form-grid-3">
-            <div class="field" style="grid-column:1/-1">
-              <label>Chief Complaint *</label>
-              <input type="text" id="t-complaint" placeholder="e.g. Crushing chest pain radiating to left arm" value="Crushing chest pain radiating to left arm, onset 30 minutes ago">
-            </div>
-            <div class="field">
-              <label>Age (years)</label>
-              <input type="number" id="t-age" placeholder="65" value="65" min="0" max="130">
-            </div>
-            <div class="field">
-              <label>Sex</label>
-              <select id="t-sex">
-                <option value="unknown">Unknown</option>
-                <option value="male" selected>Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Special Flags</label>
-              <select id="t-special">
-                <option value="">None</option>
-                <option value="copd">COPD (NEWS2 Scale 2)</option>
-                <option value="pregnant">Pregnancy</option>
-              </select>
-            </div>
-          </div>
+    <section id="polypharmacy" class="card">
+      <h2>Polypharmacy Analyser <span class="tag">60+ DDI pairs</span></h2>
+      <div id="pharmacyAlert"></div>
+      
+      <h3>Medications</h3>
+      <div id="pharmacyMedicationsContainer" class="form-grid">
+        <div class="form-group full-span" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: flex-end;"><div style="display: flex; flex-direction: column; gap: 0.35rem;"><label>Medication 1</label><input type="text" class="pharmacy-medication" placeholder="e.g., Metformin 500mg BID"></div><button class="btn btn-alert" style="height: var(--input-height);" onclick="this.closest('.form-group').remove()">✕</button></div>
+      </div>
+      <div class="actions" style="margin-bottom: 1rem;">
+        <button class="btn btn-alert" id="addPharmacyMedication">+ Add Medication</button>
+      </div>
+      
+      <div class="divider"></div>
+      <h3>Patient Factors</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Allergies (comma separated)</label><input type="text" id="pharmacyAllergies"></div>
+        <div class="form-group"><label>eGFR (mL/min/1.73m²)</label><input type="number" id="pharmacyEGFR"></div>
+        <div class="form-group"><label>Hepatic Function</label><select id="pharmacyHepaticFunction"><option value="">Normal</option><option value="Child-Pugh A (mild)">Child-Pugh A (mild)</option><option value="Child-Pugh B (moderate)">Child-Pugh B (moderate)</option><option value="Child-Pugh C (severe)">Child-Pugh C (severe)</option></select></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="runPharmacyButton">▶ Analyse Medication Safety</button>
+      </div>
+      <div id="pharmacyResult" class="result-section">
+        <div class="result-title">✓ Polypharmacy Analysis Complete</div>
+        <div id="pharmacyResultContent"></div>
+      </div>
+    </section>
+
+    <section id="guidelines" class="card">
+      <h2>Clinical Guidelines <span class="tag">12 Conditions</span></h2>
+      <div id="guidelinesAlert"></div>
+      
+      <div class="form-grid">
+        <div class="form-group full-span"><label>Condition (ICD-10)</label><select id="guidelineCondition"><option value="E11|Type 2 Diabetes Mellitus">E11 — Type 2 Diabetes Mellitus</option><option value="I10|Essential Hypertension">I10 — Essential Hypertension</option><option value="I50|Heart Failure (HFrEF)">I50 — Heart Failure (HFrEF)</option><option value="I48|Atrial Fibrillation">I48 — Atrial Fibrillation</option><option value="J44|COPD">J44 — COPD</option><option value="J45|Asthma">J45 — Asthma</option><option value="N18|Chronic Kidney Disease">N18 — Chronic Kidney Disease</option><option value="F32|Depression">F32 — Depression</option><option value="E03|Hypothyroidism">E03 — Hypothyroidism</option><option value="M10|Gout">M10 — Gout</option><option value="K21|GORD / GERD">K21 — GORD / GERD</option><option value="E78|Hyperlipidaemia">E78 — Hyperlipidaemia</option></select></div>
+        <div class="form-group full-span"><label>Current Medications (comma separated)</label><input type="text" id="guidelineMedications"></div>
+        <div class="form-group full-span"><label>Comorbidities (comma separated)</label><input type="text" id="guidelineComorbidities" placeholder="e.g., I10, J45"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="runGuidelineButton">▶ Get Guideline Recommendation</button>
+      </div>
+      <div id="guidelineResult" class="result-section">
+        <div class="result-title">✓ Guideline Recommendation Retrieved</div>
+        <div id="guidelineResultContent"></div>
+      </div>
+    </section>
+
+    <section id="about" class="card">
+      <h2>About This System</h2>
+      <div style="padding: 1rem;">
+        <p style="margin-bottom: 1rem;">Built for the <strong>Agents Assemble Hackathon</strong> by Prompt Opinion.</p>
+        <p style="margin-bottom: 1rem;">This MCP server provides three FHIR R5-integrated clinical decision support tools:</p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+          <li><strong>Clinical Triage</strong>: NEWS2, ESI-5, and symptom pattern analysis</li>
+          <li><strong>Polypharmacy Analysis</strong>: Drug interactions, allergy alerts, and organ-adjusted dosing</li>
+          <li><strong>Guidelines</strong>: Evidence-based recommendations for 12 conditions</li>
+        </ul>
+        <div class="standards">
+          <span class="std-tag">FHIR R5</span>
+          <span class="std-tag">SNOMED CT</span>
+          <span class="std-tag">LOINC</span>
+          <span class="std-tag">RxNorm</span>
+          <span class="std-tag">ICD-10</span>
+          <span class="std-tag">MCP 1.6+</span>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-header">📊 Vital Signs <span style="margin-left:auto;font-size:10px;color:var(--text3)">(leave blank if unknown)</span></div>
-        <div class="card-body">
-          <div class="form-grid form-grid-3">
-            <div class="field">
-              <label>Systolic BP (mmHg)</label>
-              <input type="number" id="t-sbp" placeholder="120" value="185">
-            </div>
-            <div class="field">
-              <label>Diastolic BP (mmHg)</label>
-              <input type="number" id="t-dbp" placeholder="80">
-            </div>
-            <div class="field">
-              <label>Heart Rate (bpm)</label>
-              <input type="number" id="t-hr" placeholder="72" value="128">
-            </div>
-            <div class="field">
-              <label>Respiratory Rate</label>
-              <input type="number" id="t-rr" placeholder="16">
-            </div>
-            <div class="field">
-              <label>SpO₂ (%)</label>
-              <input type="number" id="t-spo2" placeholder="98" value="89">
-            </div>
-            <div class="field">
-              <label>Temperature (°C)</label>
-              <input type="number" id="t-temp" placeholder="37.0" step="0.1">
-            </div>
-            <div class="field">
-              <label>GCS (3–15)</label>
-              <input type="number" id="t-gcs" placeholder="15" min="3" max="15">
-            </div>
-            <div class="field">
-              <label>Pain Score (0–10)</label>
-              <input type="number" id="t-pain" placeholder="9" min="0" max="10">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          🤒 Symptoms
-          <button class="btn-add" style="width:auto;padding:2px 12px;font-size:10px" onclick="addSymptom()">+ Add Symptom</button>
-        </div>
-        <div class="card-body">
-          <div class="symptom-list" id="symptom-list"></div>
-        </div>
-      </div>
-
-      <button class="btn-run" id="btn-triage" onclick="runTriage()">
-        <div class="spinner"></div>
-        <span class="btn-label">▶ Run Triage Assessment</span>
-      </button>
-
-      <div class="result-area" id="triage-result"></div>
-    </div>
-
-    <!-- ════ PHARMACY PANEL ════ -->
-    <div class="panel" id="panel-pharmacy">
-      <div class="panel-header">
-        <div class="panel-title">Polypharmacy Analyser</div>
-        <div class="panel-badge">60+ DDI pairs</div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">💊 Medications
-          <button class="btn-add" style="width:auto;padding:2px 12px;font-size:10px" onclick="addMed()">+ Add Medication</button>
-        </div>
-        <div class="card-body">
-          <div class="symptom-list" id="med-list"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">⚠️ Patient Factors</div>
-        <div class="card-body">
-          <div class="form-grid form-grid-3">
-            <div class="field">
-              <label>Allergies (comma separated)</label>
-              <input type="text" id="p-allergies" placeholder="penicillin, nsaid" value="penicillin">
-            </div>
-            <div class="field">
-              <label>eGFR (mL/min/1.73m²)</label>
-              <input type="text" id="p-egfr" placeholder="e.g. 28" value="28">
-            </div>
-            <div class="field">
-              <label>Hepatic Function</label>
-              <select id="p-hepatic">
-                <option value="">Normal</option>
-                <option value="A">Child-Pugh A (mild)</option>
-                <option value="B">Child-Pugh B (moderate)</option>
-                <option value="C">Child-Pugh C (severe)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button class="btn-run" id="btn-pharmacy" onclick="runPharmacy()">
-        <div class="spinner"></div>
-        <span class="btn-label">▶ Analyse Medication Safety</span>
-      </button>
-
-      <div class="result-area" id="pharmacy-result"></div>
-    </div>
-
-    <!-- ════ GUIDELINE PANEL ════ -->
-    <div class="panel" id="panel-guideline">
-      <div class="panel-header">
-        <div class="panel-title">Clinical Guidelines</div>
-        <div class="panel-badge">12 Conditions</div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">🔍 Condition Lookup</div>
-        <div class="card-body">
-          <div class="form-grid form-grid-2">
-            <div class="field">
-              <label>Condition (ICD-10)</label>
-              <select id="g-code" onchange="updateConditionDisplay()">
-                <option value="E11" data-display="Type 2 Diabetes Mellitus">E11 — Type 2 Diabetes Mellitus</option>
-                <option value="I10" data-display="Essential Hypertension">I10 — Essential Hypertension</option>
-                <option value="I50" data-display="Heart Failure (HFrEF)">I50 — Heart Failure (HFrEF)</option>
-                <option value="I48" data-display="Atrial Fibrillation">I48 — Atrial Fibrillation</option>
-                <option value="J44" data-display="COPD">J44 — COPD</option>
-                <option value="J45" data-display="Asthma">J45 — Asthma</option>
-                <option value="N18" data-display="Chronic Kidney Disease">N18 — Chronic Kidney Disease</option>
-                <option value="F32" data-display="Depression">F32 — Depression</option>
-                <option value="E03" data-display="Hypothyroidism">E03 — Hypothyroidism</option>
-                <option value="M10" data-display="Gout">M10 — Gout</option>
-                <option value="K21" data-display="GORD / GERD">K21 — GORD / GERD</option>
-                <option value="E78" data-display="Hyperlipidaemia">E78 — Hyperlipidaemia</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Current Medications (comma separated)</label>
-              <input type="text" id="g-meds" placeholder="metformin, lisinopril" value="lisinopril, atorvastatin">
-            </div>
-            <div class="field" style="grid-column:1/-1">
-              <label>Comorbidities — ICD-10 codes or names (comma separated)</label>
-              <input type="text" id="g-comorbidities" placeholder="I25, heart failure, ckd" value="I10">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button class="btn-run" id="btn-guideline" onclick="runGuideline()">
-        <div class="spinner"></div>
-        <span class="btn-label">▶ Get Guideline Recommendation</span>
-      </button>
-
-      <div class="result-area" id="guideline-result"></div>
-    </div>
-
-    <!-- ════ ABOUT PANEL ════ -->
-    <div class="panel" id="panel-about">
-      <div class="panel-header">
-        <div class="panel-title">About</div>
-        <div class="panel-badge">Hackathon Build</div>
-      </div>
-      <div class="card">
-        <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-          <div style="font-family:'Instrument Serif',serif;font-size:18px;color:var(--text)">Healthcare Clinical Intelligence MCP</div>
-          <div style="color:var(--text2);line-height:1.7">Built for the <strong style="color:var(--accent)">Agents Assemble Hackathon</strong> by Prompt Opinion. This Superpower (MCP server) provides three FHIR R5-integrated clinical decision support tools for healthcare AI agents.</div>
-          <div class="form-grid form-grid-3" style="gap:10px">
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px">
-              <div style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;margin-bottom:6px">TRIAGE ENGINE</div>
-              <div style="color:var(--text2);font-size:12px">NEWS2 (RCP 2017) + ESI-5 + 80+ symptom patterns + combination detection (ACS, stroke, SAH, sepsis)</div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px">
-              <div style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;margin-bottom:6px">DRUG SAFETY</div>
-              <div style="color:var(--text2);font-size:12px">60+ DDI pairs · CredibleMeds QTc registry · Allergy cross-reactivity · 15 therapeutic class duplicates · Renal/hepatic dosing</div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px">
-              <div style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;margin-bottom:6px">GUIDELINES</div>
-              <div style="color:var(--text2);font-size:12px">12 ICD-10 conditions · ADA, ESC, GOLD, GINA, KDIGO, NICE · Intelligent branch selection by comorbidities</div>
-            </div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">
-            Standards: FHIR R5 · SNOMED CT · LOINC · RxNorm · ICD-10 · MCP 1.6+ · SHARP context propagation
-          </div>
-        </div>
-      </div>
-    </div>
-
+    </section>
   </main>
-</div>
 
-<script>
-const API = 'http://localhost:8000';
+  <script>
+    const API = window.location.origin;
+    
+    document.querySelectorAll('.tab-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(link.dataset.tab).classList.add('active');
+        link.classList.add('active');
+      });
+    });
 
-// ── Status check ──────────────────────────────────────────────────────────
-async function checkStatus() {
-  try {
-    const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(2000) });
-    if (r.ok) {
-      document.getElementById('statusDot').style.background = 'var(--green)';
-      document.getElementById('statusDot').style.boxShadow = '0 0 8px var(--green)';
-      document.getElementById('statusLabel').textContent = 'API connected';
-    } else throw new Error();
-  } catch {
-    document.getElementById('statusDot').style.background = 'var(--red)';
-    document.getElementById('statusDot').style.boxShadow = '0 0 8px var(--red)';
-    document.getElementById('statusLabel').textContent = 'API offline — run: python run.py';
-  }
-}
-checkStatus();
-setInterval(checkStatus, 5000);
-
-// ── Navigation ────────────────────────────────────────────────────────────
-function showPanel(id, el) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`panel-${id}`).classList.add('active');
-  el.classList.add('active');
-}
-
-// ── Symptom builder ───────────────────────────────────────────────────────
-const SYMPTOM_PRESETS = [
-  {code:'29857009',  display:'Chest pain'},
-  {code:'415068001', display:'Diaphoresis'},
-  {code:'230145002', display:'Difficulty breathing'},
-  {code:'422587007', display:'Nausea'},
-  {code:'25064002',  display:'Headache'},
-  {code:'62315008',  display:'Diarrhoea'},
-  {code:'40917007',  display:'Confusion'},
-  {code:'271594007', display:'Syncope'},
-  {code:'386661006', display:'Fever'},
-  {code:'57676002',  display:'Joint pain'},
-  {code:'162076009', display:'Abdominal pain'},
-  {code:'422400008', display:'Vomiting'},
-];
-
-let symptomCount = 0;
-function addSymptom(code='', display='', severity=7) {
-  const id = symptomCount++;
-  const presetOpts = SYMPTOM_PRESETS.map(s =>
-    `<option value="${s.code}|${s.display}" ${s.code===code?'selected':''}>${s.display}</option>`
-  ).join('');
-  const row = document.createElement('div');
-  row.className = 'symptom-row';
-  row.id = `sym-${id}`;
-  row.innerHTML = `
-    <div class="field">
-      <label>Severity</label>
-      <input type="number" min="1" max="10" value="${severity}" oninput="updateSeverityLabel(${id},this.value)" style="text-align:center">
-      <div class="severity-display" id="sev-${id}">${severity}/10</div>
-    </div>
-    <div class="field">
-      <label>Symptom</label>
-      <select onchange="updateSymptomCode(${id},this)">
-        <option value="">— choose or type below —</option>
-        ${presetOpts}
-        <option value="custom">Custom…</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Display name</label>
-      <input type="text" id="sdisplay-${id}" value="${display}" placeholder="symptom name">
-    </div>
-    <button class="btn-icon" onclick="document.getElementById('sym-${id}').remove()">✕</button>
-    <input type="hidden" id="scode-${id}" value="${code}">
-  `;
-  document.getElementById('symptom-list').appendChild(row);
-}
-
-function updateSeverityLabel(id, val) {
-  document.getElementById(`sev-${id}`).textContent = `${val}/10`;
-}
-function updateSymptomCode(id, sel) {
-  if (!sel.value || sel.value === 'custom') return;
-  const [code, display] = sel.value.split('|');
-  document.getElementById(`scode-${id}`).value = code;
-  document.getElementById(`sdisplay-${id}`).value = display;
-}
-
-function getSymptoms() {
-  const rows = document.querySelectorAll('#symptom-list .symptom-row');
-  return Array.from(rows).map(row => {
-    const id = row.id.replace('sym-','');
-    return {
-      code: document.getElementById(`scode-${id}`).value || '000000',
-      display: document.getElementById(`sdisplay-${id}`).value || 'unknown symptom',
-      severity: parseInt(row.querySelector('input[type=number]').value) || 5,
+    const demo = {
+      triage: { triagePatientName: "John Smith", triageAge: 58, triageSex: "male", triageChiefComplaint: "Severe chest pain for 2 hours", triageSymptomsArray: ["Chest pain", "Shortness of breath", "Diaphoresis"], vitals_systolic_bp: 145, vitals_heart_rate: 105, vitals_respiratory_rate: 22, vitals_oxygen_saturation: 94, vitals_temperature: 37.2, vitals_gcs: 15, vitals_pain_score: 8 },
+      pharmacy: { pharmacyMedicationsArray: ["Aspirin 100mg daily", "Metoprolol 50mg BID", "Lisinopril 10mg daily"], pharmacyAllergies: "Penicillin", pharmacyEGFR: 65 },
+      guidelines: { guidelineCondition: "I10|Essential Hypertension", guidelineMedications: "Metoprolol, Lisinopril", guidelineComorbidities: "Type 2 Diabetes" }
     };
-  }).filter(s => s.display && s.display !== 'unknown symptom');
-}
 
-// ── Medication builder ────────────────────────────────────────────────────
-const MED_PRESETS = [
-  {code:'11289',  display:'Warfarin'},
-  {code:'1191',   display:'Aspirin'},
-  {code:'860975', display:'Metformin'},
-  {code:'83367',  display:'Atorvastatin'},
-  {code:'41493',  display:'Simvastatin'},
-  {code:'21212',  display:'Clarithromycin'},
-  {code:'44950',  display:'Amiodarone'},
-  {code:'36437',  display:'Citalopram'},
-  {code:'29046',  display:'Lisinopril'},
-  {code:'54552',  display:'Spironolactone'},
-  {code:'321064', display:'Ibuprofen'},
-  {code:'723',    display:'Doxycycline'},
-];
-let medCount = 0;
-function addMed(code='', display='', dosage='') {
-  const id = medCount++;
-  const opts = MED_PRESETS.map(m =>
-    `<option value="${m.code}|${m.display}" ${m.code===code?'selected':''}>${m.display}</option>`
-  ).join('');
-  const row = document.createElement('div');
-  row.className = 'med-row';
-  row.id = `med-${id}`;
-  row.innerHTML = `
-    <div class="field">
-      <label>Drug</label>
-      <select onchange="updateMedName(${id},this)">
-        <option value="">— select —</option>
-        ${opts}
-        <option value="custom">Custom…</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Name</label>
-      <input type="text" id="mname-${id}" value="${display}" placeholder="Drug name">
-    </div>
-    <div class="field">
-      <label>Dosage</label>
-      <input type="text" id="mdose-${id}" value="${dosage}" placeholder="e.g. 5mg daily">
-    </div>
-    <button class="btn-icon" onclick="document.getElementById('med-${id}').remove()">✕</button>
-    <input type="hidden" id="mcode-${id}" value="${code}">
-  `;
-  document.getElementById('med-list').appendChild(row);
-}
+    document.getElementById('demoButton').addEventListener('click', () => {
+      // Triage symptoms
+      document.querySelectorAll('.triage-symptom').forEach(e => e.remove());
+      const triageContainer = document.getElementById('triageSymptomsContainer');
+      triageContainer.innerHTML = '';
+      demo.triage.triageSymptomsArray.forEach((symptom, i) => {
+        triageContainer.innerHTML += `<div class="form-group full-span"><label>Symptom ${i+1}</label><input type="text" class="triage-symptom" placeholder="e.g., Chest pain" value="${symptom}"></div>`;
+      });
 
-function updateMedName(id, sel) {
-  if (!sel.value || sel.value === 'custom') return;
-  const [code, display] = sel.value.split('|');
-  document.getElementById(`mcode-${id}`).value = code;
-  document.getElementById(`mname-${id}`).value = display;
-}
+      // Pharmacy medications
+      document.querySelectorAll('.pharmacy-medication').forEach(e => e.remove());
+      const pharmContainer = document.getElementById('pharmacyMedicationsContainer');
+      pharmContainer.innerHTML = '';
+      demo.pharmacy.pharmacyMedicationsArray.forEach((med, i) => {
+        pharmContainer.innerHTML += `<div class="form-group full-span"><label>Medication ${i+1}</label><input type="text" class="pharmacy-medication" placeholder="e.g., Metformin 500mg BID" value="${med}"></div>`;
+      });
 
-function getMeds() {
-  const rows = document.querySelectorAll('#med-list .med-row');
-  return Array.from(rows).map(row => {
-    const id = row.id.replace('med-','');
-    return {
-      code: document.getElementById(`mcode-${id}`).value || '000',
-      display: document.getElementById(`mname-${id}`).value,
-      dosage: document.getElementById(`mdose-${id}`).value || 'as prescribed',
-    };
-  }).filter(m => m.display);
-}
-
-// ── Guideline helper ──────────────────────────────────────────────────────
-function updateConditionDisplay() {}
-
-// ── API calls ─────────────────────────────────────────────────────────────
-function setLoading(btnId, on) {
-  const btn = document.getElementById(btnId);
-  btn.disabled = on;
-  btn.classList.toggle('loading', on);
-}
-
-async function runTriage() {
-  const symptoms = getSymptoms();
-  if (!document.getElementById('t-complaint').value) {
-    alert('Please enter a chief complaint.'); return;
-  }
-  if (symptoms.length === 0) {
-    alert('Please add at least one symptom.'); return;
-  }
-
-  setLoading('btn-triage', true);
-  const special = document.getElementById('t-special').value;
-  const vitals = {};
-  const vf = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : undefined; };
-  const vi = (id) => { const v = document.getElementById(id).value; return v ? parseInt(v) : undefined; };
-  if (vf('t-sbp'))   vitals.systolic_bp       = vf('t-sbp');
-  if (vf('t-dbp'))   vitals.diastolic_bp      = vf('t-dbp');
-  if (vf('t-hr'))    vitals.heart_rate        = vf('t-hr');
-  if (vf('t-rr'))    vitals.respiratory_rate  = vf('t-rr');
-  if (vf('t-spo2'))  vitals.oxygen_saturation = vf('t-spo2');
-  if (vf('t-temp'))  vitals.temperature       = vf('t-temp');
-  if (vi('t-gcs'))   vitals.gcs               = vi('t-gcs');
-  if (vi('t-pain'))  vitals.pain_score        = vi('t-pain');
-
-  try {
-    const resp = await fetch(`${API}/triage`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        symptoms,
-        patient_id: 'demo-patient',
-        chief_complaint: document.getElementById('t-complaint').value,
-        vital_signs: Object.keys(vitals).length ? vitals : null,
-        age_years: vi('t-age') || null,
-        sex: document.getElementById('t-sex').value,
-        pregnant: special === 'pregnant',
-        has_copd: special === 'copd',
-      })
+      // Other fields
+      Object.entries(demo.triage).forEach(([k, v]) => {
+        if (k === 'triageSymptomsArray') return;
+        const e = document.getElementById(k);
+        if (e) e[e.type === 'checkbox' ? 'checked' : 'value'] = v;
+      });
+      Object.entries(demo.pharmacy).forEach(([k, v]) => {
+        if (k === 'pharmacyMedicationsArray') return;
+        const e = document.getElementById(k);
+        if (e) e.value = v;
+      });
+      Object.entries(demo.guidelines).forEach(([k, v]) => {
+        const e = document.getElementById(k);
+        if (e) e.value = v;
+      });
+      alert('✓ Demo data loaded!');
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.detail || 'API error');
-    renderTriageResult(data);
-  } catch(e) {
-    renderError('triage-result', e.message);
-  } finally {
-    setLoading('btn-triage', false);
-  }
-}
 
-async function runPharmacy() {
-  const meds = getMeds();
-  if (meds.length < 2) { alert('Add at least 2 medications to check interactions.'); return; }
-  setLoading('btn-pharmacy', true);
-  const allergies = document.getElementById('p-allergies').value
-    .split(',').map(s=>s.trim()).filter(Boolean);
-  try {
-    const resp = await fetch(`${API}/pharmacy`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        medications: meds,
-        patient_id: 'demo-patient',
-        allergies,
-        renal_function: document.getElementById('p-egfr').value || null,
-        hepatic_function: document.getElementById('p-hepatic').value || null,
-      })
+    function showAlert(id, type, msg) {
+      const e = document.getElementById(id);
+      if (e) e.innerHTML = `<div class="alert ${type}"><span class="alert-icon">${type === 'error' ? '❌' : '✓'}</span><div>${msg}</div></div>`;
+    }
+
+    function hideAlert(id) {
+      const e = document.getElementById(id);
+      if (e) e.innerHTML = '';
+    }
+
+    function showLoading(id, show) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = show;
+      btn.innerHTML = show ? '<span class="spinner"></span> Processing...' : btn.dataset.text || '▶ Submit';
+    }
+
+    function display(id, type, title, data) {
+      const div = document.getElementById(id);
+      if (!div) return;
+
+      div.classList.add('show', type);
+
+      // Build content first
+      const html =
+        typeof data === 'string'
+          ? `<pre class="json-output">${data}</pre>`
+          : Object.entries(data || {}).map(([k, v]) => `<div class="result-detail"><strong>${k}:</strong> ${v}</div>`).join('');
+
+      const contentEl = div.querySelector('.result-content');
+      const titleEl = div.querySelector('.result-title');
+
+      if (titleEl) titleEl.textContent = title;
+
+      // Avoid null-dereference if expected children are missing
+      const finalHtml = html || '<p>No data</p>';
+      if (contentEl) {
+        contentEl.innerHTML = finalHtml;
+      } else {
+        // Fallback: render into the container
+        div.innerHTML = `
+          <div class="result-title">${title || ''}</div>
+          <div class="result-content">${finalHtml}</div>
+        `;
+      }
+    }
+
+    document.getElementById('runTriageButton').addEventListener('click', async () => {
+      const complaint = document.getElementById('triageChiefComplaint').value.trim();
+      const symptomInputs = document.querySelectorAll('.triage-symptom');
+      const symptoms = Array.from(symptomInputs).map(s => s.value.trim()).filter(s => s);
+      
+      if (!complaint || !symptoms.length) { showAlert('triageAlert', 'error', 'Please enter chief complaint and at least one symptom'); return; }
+      
+      hideAlert('triageAlert');
+      document.getElementById('triageResult').classList.remove('show', 'success', 'error');
+      
+      const btn = document.getElementById('runTriageButton');
+      btn.dataset.text = btn.innerHTML;
+      showLoading('runTriageButton', true);
+
+      try {
+        const vitals = {};
+        ['systolic_bp', 'diastolic_bp', 'heart_rate', 'respiratory_rate', 'oxygen_saturation', 'temperature', 'gcs', 'pain_score'].forEach(f => {
+          const v = document.getElementById(`vitals_${f}`).value;
+          if (v) vitals[f] = parseFloat(v);
+        });
+
+        const payload = {
+          symptoms: symptoms.map((s, i) => ({ code: `s${i}`, display: s, severity: 5 })),
+          chief_complaint: complaint,
+          vital_signs: Object.keys(vitals).length ? vitals : null,
+          age_years: parseInt(document.getElementById('triageAge').value) || null,
+          sex: document.getElementById('triageSex').value,
+          pregnant: document.getElementById('triagePregnant').checked,
+          has_copd: document.getElementById('triageCOPD').checked
+        };
+
+        const res = await fetch(`${API}/triage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        display('triageResult', 'success', '✓ Triage Complete', await res.json());
+      } catch (e) {
+        showAlert('triageAlert', 'error', `Error: ${e.message}`);
+      } finally {
+        showLoading('runTriageButton', false);
+      }
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.detail || 'API error');
-    renderPharmacyResult(data);
-  } catch(e) {
-    renderError('pharmacy-result', e.message);
-  } finally {
-    setLoading('btn-pharmacy', false);
-  }
-}
 
-async function runGuideline() {
-  setLoading('btn-guideline', true);
-  const sel = document.getElementById('g-code');
-  const code = sel.value;
-  const display = sel.options[sel.selectedIndex].dataset.display;
-  const meds = document.getElementById('g-meds').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const comorbidities = document.getElementById('g-comorbidities').value.split(',').map(s=>s.trim()).filter(Boolean);
-  try {
-    const resp = await fetch(`${API}/guideline`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        condition_code: code,
-        condition_display: display,
-        patient_id: 'demo-patient',
-        current_medications: meds,
-        comorbidities,
-      })
+    document.getElementById('addTriageSymptom').addEventListener('click', () => {
+      const container = document.getElementById('triageSymptomsContainer');
+      const count = container.querySelectorAll('.triage-symptom').length + 1;
+      const div = document.createElement('div');
+      div.className = 'form-group full-span';
+      div.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: flex-end;';
+      div.innerHTML = `<div style="display: flex; flex-direction: column; gap: 0.35rem;"><label>Symptom ${count}</label><input type="text" class="triage-symptom" placeholder="e.g., Chest pain"></div><button class="btn btn-alert" style="height: var(--input-height);" onclick="this.closest('.form-group').remove()">✕</button>`;
+      container.appendChild(div);
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.detail || 'API error');
-    renderGuidelineResult(data);
-  } catch(e) {
-    renderError('guideline-result', e.message);
-  } finally {
-    setLoading('btn-guideline', false);
-  }
-}
 
-// ── Render functions ──────────────────────────────────────────────────────
-function renderError(containerId, msg) {
-  const el = document.getElementById(containerId);
-  el.innerHTML = `<div class="error-box">❌ Error: ${msg}<br><br>Is the API running? Run: <strong>python run.py</strong></div>`;
-  el.classList.add('visible');
-}
+    document.getElementById('runPharmacyButton').addEventListener('click', async () => {
+      const medInputs = document.querySelectorAll('.pharmacy-medication');
+      const meds = Array.from(medInputs).map(m => m.value.trim()).filter(m => m);
+      
+      if (!meds.length) { showAlert('pharmacyAlert', 'error', 'Please enter at least one medication'); return; }
+      
+      hideAlert('pharmacyAlert');
+      document.getElementById('pharmacyResult').classList.remove('show', 'success', 'error');
+      
+      const btn = document.getElementById('runPharmacyButton');
+      btn.dataset.text = btn.innerHTML;
+      showLoading('runPharmacyButton', true);
 
-function renderTriageResult(d) {
-  const el = document.getElementById('triage-result');
-  const p = d.triage_priority;
-  const flagsHtml = (d.clinical_flags||[]).map(f =>
-    `<span class="tag ${f.includes('Red flag')?'red':f.includes('NEWS2')?'orange':'grey'}">${f}</span>`
-  ).join('');
-  const actionsHtml = (d.recommended_actions||[]).map(a =>
-    `<div class="action-item">${a}</div>`
-  ).join('');
-  const barColor = p==='stat'?'var(--red)':p==='asap'?'var(--orange)':p==='urgent'?'var(--yellow)':'var(--green)';
-  const uid = 'tr'+Date.now();
+      try {
+        const payload = {
+          medications: meds.map((m, i) => ({ code: `m${i}`, display: m, dosage: 'as specified' })),
+          allergies: document.getElementById('pharmacyAllergies').value.split(',').map(a => a.trim()).filter(a => a),
+          renal_function: document.getElementById('pharmacyEGFR').value || null,
+          hepatic_function: document.getElementById('pharmacyHepaticFunction').value || null
+        };
 
-  el.innerHTML = `
-    <div class="priority-banner ${p}">
-      <div>
-        <div class="priority-level">${p.toUpperCase()}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px">TRIAGE PRIORITY</div>
-      </div>
-      <div class="priority-meta">
-        <div class="priority-esi">${d.esi_level||''}</div>
-        <div class="priority-wait">Est. wait: ${d.estimated_wait_minutes} min</div>
-      </div>
-      <div class="score-ring">
-        <div class="score-val">${d.risk_score}</div>
-        <div class="score-lbl">Risk /100</div>
-      </div>
-      <div class="score-ring">
-        <div class="news2-val">${d.news2_score}</div>
-        <div class="score-lbl">NEWS2 /20</div>
-      </div>
-    </div>
+        const res = await fetch(`${API}/pharmacy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        display('pharmacyResult', 'success', '✓ Analysis Complete', await res.json());
+      } catch (e) {
+        showAlert('pharmacyAlert', 'error', `Error: ${e.message}`);
+      } finally {
+        showLoading('runPharmacyButton', false);
+      }
+    });
 
-    ${flagsHtml ? `<div class="card">
-      <div class="card-header">🚩 Clinical Flags</div>
-      <div class="card-body"><div class="tag-list">${flagsHtml}</div></div>
-    </div>` : ''}
+    document.getElementById('addPharmacyMedication').addEventListener('click', () => {
+      const container = document.getElementById('pharmacyMedicationsContainer');
+      const count = container.querySelectorAll('.pharmacy-medication').length + 1;
+      const div = document.createElement('div');
+      div.className = 'form-group full-span';
+      div.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: flex-end;';
+      div.innerHTML = `<div style="display: flex; flex-direction: column; gap: 0.35rem;"><label>Medication ${count}</label><input type="text" class="pharmacy-medication" placeholder="e.g., Metformin 500mg BID"></div><button class="btn btn-alert" style="height: var(--input-height);" onclick="this.closest('.form-group').remove()">✕</button>`;
+      container.appendChild(div);
+    });
 
-    <div class="card">
-      <div class="card-header">📋 Reasoning</div>
-      <div class="card-body" style="color:var(--text2);font-size:13px;line-height:1.7">${d.reasoning}</div>
-    </div>
+    document.getElementById('runGuidelineButton').addEventListener('click', async () => {
+      const cond = document.getElementById('guidelineCondition').value;
+      const [code, conditionDisplay] = cond.split('|');
+      
+      hideAlert('guidelinesAlert');
+      document.getElementById('guidelineResult').classList.remove('show', 'success', 'error');
+      
+      const btn = document.getElementById('runGuidelineButton');
+      btn.dataset.text = btn.innerHTML;
+      showLoading('runGuidelineButton', true);
 
-    <div class="card">
-      <div class="card-header">✅ Recommended Actions</div>
-      <div class="card-body"><div class="action-list">${actionsHtml}</div></div>
-    </div>
+      try {
+        const payload = {
+          condition_code: code,
+          condition_display: conditionDisplay,
+          current_medications: document.getElementById('guidelineMedications').value.split(',').map(m => m.trim()).filter(m => m),
+          comorbidities: document.getElementById('guidelineComorbidities').value.split(',').map(c => c.trim()).filter(c => c)
+        };
 
-    <div class="risk-bar-wrap">
-      <div class="risk-bar-label"><span>Risk Score</span><span>${d.risk_score}/100</span></div>
-      <div class="risk-bar-outer">
-        <div class="risk-bar-inner" style="width:${d.risk_score}%;background:${barColor}"></div>
-      </div>
-    </div>
+        const res = await fetch(`${API}/guideline`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        display('guidelineResult', 'success', '✓ Guideline Retrieved', await res.json());
+      } catch (e) {
+        showAlert('guidelinesAlert', 'error', `Error: ${e.message}`);
+      } finally {
+        showLoading('runGuidelineButton', false);
+      }
+    });
 
-    <span class="json-toggle" onclick="document.getElementById('${uid}').classList.toggle('visible')">{ } view raw JSON</span>
-    <pre class="json-raw" id="${uid}">${JSON.stringify(d,null,2)}</pre>
-  `;
-  el.classList.add('visible');
-}
-
-function renderPharmacyResult(d) {
-  const el = document.getElementById('pharmacy-result');
-  const rl = d.risk_level||'LOW';
-  const rlColor = rl==='CRITICAL'?'var(--red)':rl==='HIGH'?'var(--orange)':rl==='MODERATE'?'var(--yellow)':'var(--green)';
-  const barColor = rlColor;
-
-  const ixHtml = (d.interactions||[]).map(ix => `
-    <div class="interaction-card ${ix.severity}">
-      <div class="ix-header">
-        <span class="ix-drugs">${ix.drug_a} ↔ ${ix.drug_b}</span>
-        <span class="ix-severity ${ix.severity}">${ix.severity}</span>
-        ${ix.qtc_risk?'<span class="tag orange">⚡ QTc Risk</span>':''}
-        <span class="tag grey">Evidence ${ix.evidence_level}</span>
-      </div>
-      <div class="ix-desc">${ix.description}</div>
-      ${ix.mechanism?`<div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">mechanism: ${ix.mechanism}</div>`:''}
-      <div class="ix-mgmt">${ix.management}</div>
-    </div>
-  `).join('');
-
-  const allergyHtml = (d.allergy_alerts||[]).map(a => `
-    <div class="interaction-card critical">
-      <div class="ix-header">
-        <span class="ix-drugs">⚠️ ${a.drug}</span>
-        <span class="ix-severity critical">ALLERGY ALERT</span>
-      </div>
-      <div class="ix-desc">Known allergen: ${a.allergen} — ${a.reaction}</div>
-    </div>
-  `).join('');
-
-  const renalHtml = (d.renal_adjustments||[]).map(r =>
-    `<div class="action-item">${r}</div>`).join('');
-  const hepaticHtml = (d.hepatic_adjustments||[]).map(r =>
-    `<div class="action-item">${r}</div>`).join('');
-  const dupHtml = (d.duplicate_therapies||[]).map(r =>
-    `<div class="action-item">${r}</div>`).join('');
-
-  const uid = 'ph'+Date.now();
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px 22px">
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:${rlColor}">${rl}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">RISK LEVEL</div>
-      </div>
-      <div style="flex:1">
-        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">${d.recommendation}</div>
-        <div class="risk-bar-outer">
-          <div class="risk-bar-inner" style="width:${d.overall_risk_score}%;background:${barColor}"></div>
-        </div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px">Score: ${d.overall_risk_score}/100 · ${d.medications_analysed} medications · ${d.total_findings} finding(s)</div>
-      </div>
-      ${d.qtc_prolongation_risk?'<div class="tag orange" style="font-size:12px;padding:6px 12px">⚡ QTc RISK</div>':''}
-    </div>
-
-    ${allergyHtml ? `<div class="card"><div class="card-header">🚨 Allergy Alerts</div><div class="card-body" style="display:flex;flex-direction:column;gap:8px">${allergyHtml}</div></div>` : ''}
-    ${ixHtml ? `<div class="card"><div class="card-header">💊 Drug Interactions (${(d.interactions||[]).length})</div><div class="card-body" style="display:flex;flex-direction:column;gap:10px">${ixHtml}</div></div>` : '<div class="card"><div class="card-header">💊 Drug Interactions</div><div class="card-body" style="color:var(--green)">✓ No significant interactions detected</div></div>'}
-    ${renalHtml ? `<div class="card"><div class="card-header">🫘 Renal Dosing Adjustments</div><div class="card-body"><div class="action-list">${renalHtml}</div></div></div>` : ''}
-    ${hepaticHtml ? `<div class="card"><div class="card-header">🫀 Hepatic Adjustments</div><div class="card-body"><div class="action-list">${hepaticHtml}</div></div></div>` : ''}
-    ${dupHtml ? `<div class="card"><div class="card-header">⚠️ Duplicate Therapies</div><div class="card-body"><div class="action-list">${dupHtml}</div></div></div>` : ''}
-
-    <span class="json-toggle" onclick="document.getElementById('${uid}').classList.toggle('visible')">{ } view raw JSON</span>
-    <pre class="json-raw" id="${uid}">${JSON.stringify(d,null,2)}</pre>
-  `;
-  el.classList.add('visible');
-}
-
-function renderGuidelineResult(d) {
-  const el = document.getElementById('guideline-result');
-  if (d.error) { renderError('guideline-result', d.error); return; }
-
-  const medsHtml = (d.applicable_medications||[]).map(m=>`<div class="pill">${m}</div>`).join('');
-  const contrHtml = (d.contraindications||[]).map(c=>`<span class="tag red">${c}</span>`).join('');
-  const monHtml = (d.monitoring_requirements||[]).map(m=>`<div class="action-item">${m}</div>`).join('');
-  const lifeHtml = (d.lifestyle_modifications||[]).map(m=>`<div class="action-item">${m}</div>`).join('');
-  const uid = 'gl'+Date.now();
-
-  el.innerHTML = `
-    <div class="card">
-      <div class="card-body">
-        <div class="guideline-card">
-          <div>
-            <div class="guideline-source">${d.guideline_source}</div>
-            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-              <span class="strength-badge">★ ${d.strength.toUpperCase()}</span>
-              <span class="tag blue">Evidence Grade ${d.evidence_grade}</span>
-              ${d.follow_up_weeks?`<span class="tag grey">Follow-up: ${d.follow_up_weeks} weeks</span>`:''}
-            </div>
-          </div>
-          <div class="guideline-text">${d.recommendation}</div>
-          ${medsHtml?`<div><div class="section-label">Recommended Medications</div><div class="pill-list">${medsHtml}</div></div>`:''}
-          ${contrHtml?`<div><div class="section-label">Contraindications</div><div class="tag-list">${contrHtml}</div></div>`:''}
-        </div>
-      </div>
-    </div>
-
-    ${monHtml?`<div class="card"><div class="card-header">📊 Monitoring Requirements</div><div class="card-body"><div class="action-list">${monHtml}</div></div></div>`:''}
-    ${lifeHtml?`<div class="card"><div class="card-header">🥗 Lifestyle Modifications</div><div class="card-body"><div class="action-list">${lifeHtml}</div></div></div>`:''}
-    ${d.specialist_referral?`<div class="card"><div class="card-header">👨‍⚕️ Specialist Referral</div><div class="card-body" style="color:var(--text2)">${d.specialist_referral}</div></div>`:''}
-
-    <span class="json-toggle" onclick="document.getElementById('${uid}').classList.toggle('visible')">{ } view raw JSON</span>
-    <pre class="json-raw" id="${uid}">${JSON.stringify(d,null,2)}</pre>
-  `;
-  el.classList.add('visible');
-}
-
-// ── Seed default data ──────────────────────────────────────────────────────
-addSymptom('29857009', 'Chest pain',          9);
-addSymptom('415068001','Diaphoresis',          7);
-addSymptom('230145002','Difficulty breathing', 8);
-
-addMed('11289',  'Warfarin',   '5mg daily');
-addMed('1191',   'Aspirin',    '81mg daily');
-addMed('860975', 'Metformin',  '1000mg twice daily');
-</script>
+    console.log('✓ Frontend ready');
+  </script>
 </body>
 </html>
