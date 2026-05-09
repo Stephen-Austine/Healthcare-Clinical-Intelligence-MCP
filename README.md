@@ -173,7 +173,7 @@ The FastAPI layer (`src/api.py`) wraps the same tool functions and serves the br
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/your-org/healthcare-mcp-superpower
+git clone https://github.com/healthcare-ai/caregap-mcp
 cd healthcare-mcp-superpower
 pip install -r requirements.txt
 ```

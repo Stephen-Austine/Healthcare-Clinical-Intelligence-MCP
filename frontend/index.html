@@ -351,8 +351,8 @@
     });
 
     const demo = {
-      triage: { triagePatientName: "John Smith", triageAge: 58, triageSex: "male", triageChiefComplaint: "Severe chest pain for 2 hours", triageSymptomsArray: ["Chest pain", "Shortness of breath", "Diaphoresis"], vitals_systolic_bp: 145, vitals_heart_rate: 105, vitals_respiratory_rate: 22, vitals_oxygen_saturation: 94, vitals_temperature: 37.2, vitals_gcs: 15, vitals_pain_score: 8 },
-      pharmacy: { pharmacyMedicationsArray: ["Aspirin 100mg daily", "Metoprolol 50mg BID", "Lisinopril 10mg daily"], pharmacyAllergies: "Penicillin", pharmacyEGFR: 65 },
+      triage: { triagePatientName: "John Smith", triageAge: 58, triageSex: "male", triageChiefComplaint: "Severe chest pain for 2 hours", triageSymptomsArray: ["Chest pain", "Shortness of breath", "Diaphoresis"], vitals_systolic_bp: 145, vitals_heart_rate: 105, vitals_respiratory_rate: 22, vitals_oxygen_saturation: 94, vitals_temperature: 37.2, vitals_gcs: 15, vitals_pain_score: 8, triageCOPD: false, triagePregnant: false },
+      pharmacy: { pharmacyMedicationsArray: ["Aspirin 100mg daily", "Metoprolol 50mg BID", "Lisinopril 10mg daily", "Warfarin 5mg daily", "Metformin 500mg BID"], pharmacyAllergies: "Penicillin", pharmacyEGFR: 65, pharmacyHepaticFunction: "Child-Pugh B (moderate)" },
       guidelines: { guidelineCondition: "I10|Essential Hypertension", guidelineMedications: "Metoprolol, Lisinopril", guidelineComorbidities: "Type 2 Diabetes" }
     };
 
@@ -408,6 +408,45 @@
       btn.innerHTML = show ? '<span class="spinner"></span> Processing...' : btn.dataset.text || '▶ Submit';
     }
 
+    function formatValue(k, v) {
+      // FHIR reference fields — null means no live FHIR server in demo mode
+      if (v === null || v === undefined) {
+        const fhirKeys = ['fhir_medication_request_reference', 'fhir_observation_reference', 'fhir_careplan_reference'];
+        if (fhirKeys.includes(k)) return '<span style="opacity:0.55;font-style:italic">Not written — no FHIR server configured in demo mode</span>';
+        return '<span style="opacity:0.45;font-style:italic">—</span>';
+      }
+      // Empty array
+      if (Array.isArray(v) && v.length === 0) return '<span style="opacity:0.45;font-style:italic">None identified</span>';
+      // Array of objects (interactions, allergy_alerts)
+      if (Array.isArray(v) && typeof v[0] === 'object') {
+        return v.map(obj => {
+          const lines = Object.entries(obj).map(([ok, ov]) =>
+            `<span style="display:block;padding-left:0.75rem"><strong>${ok}:</strong> ${ov}</span>`
+          ).join('');
+          return `<div style="border-left:2px solid var(--accent,#e45);padding:0.4rem 0 0.4rem 0.5rem;margin:0.35rem 0">${lines}</div>`;
+        }).join('');
+      }
+      // Array of strings (duplicate_therapies, renal_adjustments, etc.)
+      if (Array.isArray(v)) {
+        return v.map(s => `<span style="display:block;padding-left:0.5rem">• ${s}</span>`).join('');
+      }
+      // Boolean
+      if (typeof v === 'boolean') return v
+        ? '<span style="color:#c0392b;font-weight:600">⚠ Yes</span>'
+        : '<span style="color:#27ae60">✓ No</span>';
+      // Number risk score — colour by magnitude
+      if (k === 'overall_risk_score') {
+        const col = v >= 75 ? '#c0392b' : v >= 50 ? '#e67e22' : v >= 25 ? '#f1c40f' : '#27ae60';
+        return `<span style="font-weight:700;color:${col}">${v}/100</span>`;
+      }
+      // risk_level badge
+      if (k === 'risk_level') {
+        const col = {CRITICAL:'#c0392b',HIGH:'#e67e22',MODERATE:'#f39c12',LOW:'#27ae60'}[v] || '#888';
+        return `<span style="font-weight:700;color:${col}">${v}</span>`;
+      }
+      return String(v);
+    }
+
     function display(id, type, title, data) {
       const div = document.getElementById(id);
       if (!div) return;
@@ -418,7 +457,9 @@
       const html =
         typeof data === 'string'
           ? `<pre class="json-output">${data}</pre>`
-          : Object.entries(data || {}).map(([k, v]) => `<div class="result-detail"><strong>${k}:</strong> ${v}</div>`).join('');
+          : Object.entries(data || {}).map(([k, v]) =>
+              `<div class="result-detail"><strong>${k}:</strong> ${formatValue(k, v)}</div>`
+            ).join('');
 
       const contentEl = div.querySelector('.result-content');
       const titleEl = div.querySelector('.result-title');

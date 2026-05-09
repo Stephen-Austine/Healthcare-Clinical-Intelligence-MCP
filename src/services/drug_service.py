@@ -18,6 +18,7 @@ Lexicomp, or a CDS Hooks service — the interface is identical.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from models.clinical_models import (
@@ -33,6 +34,32 @@ from models.clinical_models import (
 def _norm(name: str) -> str:
     """Lowercase-strip for consistent lookups."""
     return name.strip().lower()
+
+
+# Frequency / route abbreviations that are never part of a drug name
+_FREQ_ROUTE = {
+    "daily", "nocte", "mane", "od", "bd", "bid", "tds", "tid", "qds", "qid",
+    "prn", "stat", "weekly", "monthly",
+    "oral", "orally", "iv", "im", "sc", "sublingual", "topical", "inhaled",
+    "tablet", "tablets", "capsule", "capsules", "solution", "syrup", "patch",
+    "and", "with",
+}
+
+def _extract_name(display: str) -> str:
+    """
+    Extract the bare drug name from a display string like 'Metoprolol 50mg BID'.
+
+    Strategy: collect lowercase tokens until we hit one that contains a digit
+    or is a known frequency/route abbreviation.  This correctly handles
+    multi-word names such as 'Isosorbide Mononitrate' and 'Co-amoxiclav'.
+    """
+    parts: List[str] = []
+    for token in display.strip().split():
+        low = token.lower().rstrip(".,;")
+        if re.search(r"\d", low) or low in _FREQ_ROUTE:
+            break
+        parts.append(low)
+    return " ".join(parts) if parts else _norm(display.split()[0])
 
 
 # ---------------------------------------------------------------------------
@@ -579,6 +606,17 @@ _ALLERGY_CROSS_REACTIVITY: Dict[str, List[Tuple[str, str, str]]] = {
 
 _RENAL_DOSING: Dict[str, List[Tuple[float, str]]] = {
     # drug → list of (eGFR_threshold, guidance) sorted descending by threshold
+    # ACE inhibitors — renally cleared; hyperkalaemia and AKI risk in CKD
+    "lisinopril":        [(45, "Reduce dose; monitor U&E and potassium closely. eGFR <30: use with caution, max 10 mg/day."),
+                          (30, "Use lowest effective dose only; high hyperkalaemia and AKI risk — monitor weekly.")],
+    "ramipril":          [(45, "Reduce dose; monitor U&E. eGFR <30: max 1.25 mg/day."),
+                          (30, "Use with caution at reduced dose; risk of acute deterioration in renal function.")],
+    "enalapril":         [(45, "Dose reduction recommended; monitor electrolytes."),
+                          (30, "Use with caution; risk of hyperkalaemia and AKI.")],
+    "perindopril":       [(45, "Dose reduction required; monitor U&E."),
+                          (30, "Use lowest dose; close monitoring required.")],
+    # Warfarin — renally cleared metabolites; bleeding risk increases with renal impairment
+    "warfarin":          [(30, "Use with increased caution; metabolite accumulation raises bleeding risk. Increase INR monitoring frequency to weekly.")],
     "metformin":         [(45, "Reduce dose; increased monitoring. Contraindicated if eGFR <30."),
                           (30, "CONTRAINDICATED — high lactic acidosis risk.")],
     "metformin hydrochloride": [(45, "See metformin."), (30, "CONTRAINDICATED.")],
@@ -706,7 +744,7 @@ class DrugInteractionEngine:
         renal_function: Optional[str] = None,
         hepatic_function: Optional[str] = None,
     ) -> PharmacyResult:
-        med_names = [_norm(m.display) for m in medications]
+        med_names = [_extract_name(m.display) for m in medications]
 
         interactions   = self._check_ddi(medications, med_names)
         allergy_alerts = self._check_allergies(medications, allergies or [])
@@ -786,7 +824,7 @@ class DrugInteractionEngine:
             for drug, reaction, sev in cross_list:
                 drug_n = _norm(drug)
                 for med in meds:
-                    if _norm(med.display) == drug_n or drug_n in _norm(med.display):
+                    if _extract_name(med.display) == drug_n or drug_n in _extract_name(med.display):
                         alerts.append(AllergyAlert(
                             drug     = med.display,
                             allergen = allergen_raw,
@@ -843,12 +881,18 @@ class DrugInteractionEngine:
             return []
         cp = hepatic.strip().upper()
         if cp not in ("A", "B", "C"):
-            # Try to parse "Child-Pugh B" style
+            # Parse "Child-Pugh B", "Child-Pugh B (moderate)", "CP-B", etc.
+            # Use word-boundary aware search so "C" in "CHILD" doesn't match grade C.
+            import re as _re
+            matched = False
             for grade in ("C", "B", "A"):
-                if grade in cp:
+                # Match the grade only when it appears as a standalone letter,
+                # e.g. "PUGH B", "GRADE B", "CP B", or bare "-B " / "(B)"
+                if _re.search(rf'(?<![A-Z]){grade}(?![A-Z])', cp):
                     cp = grade
+                    matched = True
                     break
-            else:
+            if not matched:
                 return [f"Unrecognised hepatic function descriptor: {hepatic!r}"]
 
         adjustments: List[str] = []

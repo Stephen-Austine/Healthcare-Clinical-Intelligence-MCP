@@ -25,9 +25,9 @@ startCommand:
   commandFunction: |
     (config) => ({
       command: "python",
-      args: ["server.py"],
+      args: ["src/server.py"],
       env: {
-        PYTHONPATH: ".",
+        PYTHONPATH: "./src",
         FHIR_SERVER_URL: config.fhir_server_url || "https://hapi.fhir.org/baseR5"
       }
     })
