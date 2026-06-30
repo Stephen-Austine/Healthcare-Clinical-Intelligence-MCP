@@ -2,7 +2,7 @@
 
 A Model Context Protocol (MCP) server providing AI-powered clinical decision support at the point of care. Built for the Agents Assemble hackathon on the Prompt Opinion platform.
 
-Three production-grade MCP tools — clinical triage, polypharmacy safety analysis, and evidence-based guideline recommendations — each integrated with FHIR R5 and the SHARP context propagation standard.
+Three production-grade MCP tools clinical triage, polypharmacy safety analysis, and evidence-based guideline recommendations each integrated with FHIR R5 and the SHARP context propagation standard.
 
 ---
 
